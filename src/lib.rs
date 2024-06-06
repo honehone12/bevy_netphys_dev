@@ -8,13 +8,20 @@ pub mod network_rigidbody;
 
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-use config::*;
+use config::PHYSICS_FIXED_TICK_DELTA;
 use network_rigidbody::*;
 
 pub const PLAYER_SPAWN_POSITION: Vec3 = Vec3::new(0.0, 25.0, 0.0);
 pub const PLAYER_BALL_RADIUS: f32 = 1.0;
 pub const PLAYER_BALL_RESTITUTION: f32 = 1.0;
 pub const PLAYER_COLOR: Color = Color::RED;
+
+#[derive(Component)]
+pub struct Cache<C: Component> {
+    pub latest: C,
+    pub second: C,
+    pub elapsed_time: f32
+}
 
 pub struct GameCommonPlugin;
 

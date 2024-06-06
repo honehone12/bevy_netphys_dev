@@ -3,6 +3,7 @@ use bevy_replicon::prelude::*;
 use super::{
     *, 
     level::*,
+    config::*,
     network_rigidbody::*
 };
 
@@ -31,13 +32,14 @@ fn handle_server_event(
                     TransformBundle::from_transform(
                         Transform::from_translation(PLAYER_SPAWN_POSITION)
                     ),
-                    NetworkRigidBody::ServerSimulation{
-                        translation: PLAYER_SPAWN_POSITION,
-                        euler: default()
-                    },
+                    NetworkRigidBody::default_server_simulation(),
                     RigidBody::Dynamic,
                     Collider::ball(PLAYER_BALL_RADIUS),
-                    Restitution::coefficient(PLAYER_BALL_RESTITUTION)
+                    Restitution::coefficient(PLAYER_BALL_RESTITUTION),
+                    ExternalImpulse{
+                        impulse: Vec3::ZERO,
+                        torque_impulse: INITIAL_TORQUE_IMPULSE,
+                    }
                 ));
 
                 info!("client: {client_id:?} connected");

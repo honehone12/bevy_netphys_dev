@@ -46,6 +46,10 @@ fn setup_ball(
         },
         RigidBody::Dynamic,
         Collider::ball(PLAYER_BALL_RADIUS),
-        Restitution::coefficient(PLAYER_BALL_RESTITUTION)
+        Restitution::coefficient(PLAYER_BALL_RESTITUTION),
+        ExternalImpulse{
+            impulse: Vec3::ZERO,
+            torque_impulse: INITIAL_TORQUE_IMPULSE,
+        }
     ));
 }

@@ -13,7 +13,7 @@ impl Plugin for GameServerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(GameCommonPlugin)
         .add_systems(Startup, server_setup_floor)
-        .add_systems(Update, (
+        .add_systems(FixedPostUpdate, (
             handle_server_event,
             set_network_rigidbody_system
         ).chain());

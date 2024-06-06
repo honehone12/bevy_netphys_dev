@@ -20,7 +20,7 @@ impl Plugin for GameClientPlugin {
             setup_fixed_camera,
             client_setup_floor
         ))
-        .add_systems(Update, (
+        .add_systems(FixedPreUpdate, (
             handle_player_spawned,
             update_net_rb_cache_system,
             apply_net_rb_interpolation_system
@@ -107,9 +107,10 @@ fn apply_net_rb_interpolation_system(
         .clamp(0.0, 1.0);
         let translation = second_trans.lerp(latest_trans, per);
         let rotation = second_rot.slerp(latest_rot, per);
-        cache.elapsed_time += fixed_time.delta_seconds();
-
+    
         transform.translation = translation;
         transform.rotation = rotation;
+
+        cache.elapsed_time += fixed_time.delta_seconds();
     }
 }

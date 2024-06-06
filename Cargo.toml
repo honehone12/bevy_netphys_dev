@@ -1,0 +1,23 @@
+[package]
+name = "bevy_netphys_dev"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release.package.bevy_rapier3d]
+codegen-units = 1
+
+[dependencies]
+anyhow = "1.0.86"
+bevy = "0.13.2"
+bevy_rapier3d = "0.26.0"
+bevy_replicon = "0.26.2"
+bevy_replicon_renet = "0.3.0"
+serde = "1.0.203"

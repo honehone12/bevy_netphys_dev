@@ -16,21 +16,23 @@ pub const PLAYER_BALL_RADIUS: f32 = 1.0;
 pub const PLAYER_BALL_RESTITUTION: f32 = 1.0;
 pub const PLAYER_COLOR: Color = Color::RED;
 
-pub type GameDefaultPhysics = ();
-
 pub struct GameCommonPlugin;
 
 impl Plugin for GameCommonPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            RapierPhysicsPlugin::<GameDefaultPhysics>::default(),
-            NetworkRigidBodyPlugin
-        ));
+        app.init_resource::<RapierConfiguration>();
 
-        let mut physics_config = app.world.resource_mut::<RapierConfiguration>();
+        let mut physics_config = app.world.resource_mut
+        ::<RapierConfiguration>();
         physics_config.timestep_mode = TimestepMode::Fixed {
             dt: PHYSICS_FIXED_TICK_DELTA, 
             substeps: 1 
         };
+
+        app.add_plugins((
+            RapierPhysicsPlugin::<()>::default()
+            .in_fixed_schedule(),
+            NetworkRigidBodyPlugin
+        ));
     }
 }

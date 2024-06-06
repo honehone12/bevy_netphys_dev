@@ -10,8 +10,17 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins(DefaultPlugins)
-    .add_plugins((
-        RapierPhysicsPlugin::<()>::default(),
+    .init_resource::<RapierConfiguration>();
+
+    let mut physics_config = app.world.resource_mut::<RapierConfiguration>();
+    physics_config.timestep_mode = TimestepMode::Fixed {
+        dt: PHYSICS_FIXED_TICK_DELTA, 
+        substeps: 1 
+    };
+
+    app.add_plugins((
+        RapierPhysicsPlugin::<()>::default()
+        .in_fixed_schedule(),
         RapierDebugRenderPlugin::default()
     ))
     .add_systems(Startup, (
@@ -19,15 +28,8 @@ fn main() {
         setup_fixed_camera,
         client_setup_floor,
         setup_ball
-    ).chain());
-    
-    let mut physics_config = app.world.resource_mut::<RapierConfiguration>();
-    physics_config.timestep_mode = TimestepMode::Fixed {
-        dt: PHYSICS_FIXED_TICK_DELTA, 
-        substeps: 1 
-    };
-    
-    app.run();
+    ).chain())
+    .run();
 }
 
 fn setup_ball(

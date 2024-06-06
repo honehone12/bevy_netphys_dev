@@ -47,7 +47,7 @@ fn handle_player_spawned(
             Cache::<NetworkRigidBody> {
                 latest: NetworkRigidBody::default_server_simulation(),
                 second: NetworkRigidBody::default_server_simulation(),
-                elapsed_time: default()
+                elapsed_time: -1.0
             },
             RigidBody::KinematicPositionBased,
             Collider::ball(PLAYER_BALL_RADIUS)
@@ -64,7 +64,11 @@ fn update_net_rb_cache_system(
     >
 ) {
     for (net_rb, mut cache) in query.iter_mut() {
-        cache.second = cache.latest.clone();
+        cache.second = if cache.elapsed_time < 0.0 {
+            net_rb.clone()
+        } else {
+            cache.latest.clone()
+        };
         cache.latest = net_rb.clone();
         cache.elapsed_time = 0.0;
     }

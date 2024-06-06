@@ -25,7 +25,8 @@ pub fn client_setup_floor(
 pub fn server_setup_floor(mut commands: Commands) {
     commands.spawn(
         TransformBundle::from_transform(
-        Transform::from_translation(FLOOR_POSITION))
+            Transform::from_translation(FLOOR_POSITION)
+        )
     )
     .insert(floor_collider());
 }

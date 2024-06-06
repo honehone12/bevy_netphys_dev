@@ -1,13 +1,14 @@
-use bevy::{math::vec3, prelude::*};
+use bevy::prelude::*;
+use bevy_rapier3d::prelude::*;
 
-pub const FLOOR_SIZE: Vec3 = vec3(50.0, 1.0, 50.0);
+pub const FLOOR_SIZE: Vec3 = Vec3::new(50.0, 1.0, 50.0);
 pub const FLOOR_COLOR: Color = Color::rgb(0.5, 0.5, 0.5);
-pub const FLOOR_POSITION: Vec3 = vec3(0.0, -0.5, 0.0);
-pub const LIGHT_POSITION: Vec3 = vec3(0.0, 50.0, 0.0);
+pub const FLOOR_POSITION: Vec3 = Vec3::new(0.0, -0.5, 0.0);
+pub const LIGHT_POSITION: Vec3 = Vec3::new(0.0, 50.0, 0.0);
 pub const LIGHT_ROTATION_X: f32 = -std::f32::consts::PI / 4.0;
-pub const CAMERA_POSITION: Vec3 = vec3(0.0, 70.0, 25.0);
+pub const CAMERA_POSITION: Vec3 = Vec3::new(0.0, 70.0, 25.0);
 
-pub fn setup_floor(
+pub fn client_setup_floor(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>
@@ -17,7 +18,21 @@ pub fn setup_floor(
         material: materials.add(FLOOR_COLOR),
         transform: Transform::from_translation(FLOOR_POSITION),
         ..default()
-    });
+    })
+    .insert(floor_collider());
+}
+
+pub fn server_setup_floor(mut commands: Commands) {
+    commands.spawn(
+        TransformBundle::from_transform(
+        Transform::from_translation(FLOOR_POSITION))
+    )
+    .insert(floor_collider());
+}
+
+pub fn floor_collider() -> Collider {
+    let extents = FLOOR_SIZE * 0.5;
+    Collider::cuboid(extents.x, extents.y, extents.z)
 }
 
 pub fn setup_light(mut commands: Commands) {

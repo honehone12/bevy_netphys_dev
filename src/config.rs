@@ -28,6 +28,8 @@ pub const PREDICTION_ERROR_COUNT_THRESHOLD: u32 = 10;
 
 pub const DISTANCE_CULLING_THREASHOLD: f32 = 100.0;
 
+pub const PHYSICS_FIXED_TICK_RATE: f32 = 64.0;
+
 pub fn get_dev_protocol_id() -> u64 {
     if cfg!(debug_assertions) {
         0x655ea1eecade99ad

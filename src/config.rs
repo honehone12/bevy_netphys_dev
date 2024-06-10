@@ -31,7 +31,8 @@ pub const DISTANCE_CULLING_THREASHOLD: f32 = 100.0;
 pub const PHYSICS_FIXED_TICK_RATE: f32 = 64.0;
 pub const PHYSICS_FIXED_TICK_DELTA: f32 = 1.0 / PHYSICS_FIXED_TICK_RATE;
 
-pub const INITIAL_TORQUE_IMPULSE: Vec3 = Vec3::new(1.5, 0.0, 0.0);
+pub const IMPULSE: Vec3 = Vec3::new(0.0, 15.0, 0.0);
+pub const TORQUE_IMPULSE: Vec3 = Vec3::new(0.015, 0.0, 0.0);
 
 pub fn get_dev_protocol_id() -> u64 {
     if cfg!(debug_assertions) {

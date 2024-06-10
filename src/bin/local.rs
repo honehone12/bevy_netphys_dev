@@ -49,7 +49,7 @@ fn setup_ball(
         Restitution::coefficient(PLAYER_BALL_RESTITUTION),
         ExternalImpulse{
             impulse: Vec3::ZERO,
-            torque_impulse: INITIAL_TORQUE_IMPULSE,
+            torque_impulse: TORQUE_IMPULSE,
         }
     ));
 }

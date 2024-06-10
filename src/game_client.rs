@@ -3,8 +3,7 @@ use bevy_rapier3d::prelude::*;
 use super::{
     *,
     network_rigidbody::*,
-    level::*,
-    config::DEV_NETWORK_TICK_DELTA
+    level::*
 };
 
 pub struct GameClientPlugin;
@@ -20,7 +19,10 @@ impl Plugin for GameClientPlugin {
             setup_fixed_camera,
             client_setup_floor
         ))
-        .add_systems(Update, handle_player_spawned)
+        .add_systems(Update, (
+            handle_player_spawned,
+            draw_net_rb_gizmos_system
+        ))
         .add_systems(FixedUpdate, (
             update_net_rb_cache_system,
             apply_net_rb_interpolation_system
@@ -48,11 +50,17 @@ fn handle_player_spawned(
                     euler.z
                 ))
             }
-            &NetworkRigidBody::ClientPrediction => unimplemented!()
+            &NetworkRigidBody::ClientPrediction { translation, euler } => {
+                (translation, Quat::from_euler(EulerRot::XYZ, 
+                    euler.x, 
+                    euler.y, 
+                    euler.z
+                ))
+            }
         };
 
         commands.entity(e)
-        .insert((
+        .insert(
             PbrBundle{
                 mesh: meshes.add(Mesh::from(Sphere::new(PLAYER_BALL_RADIUS))),
                 material: materials.add(PLAYER_COLOR),
@@ -62,15 +70,24 @@ fn handle_player_spawned(
                     ..default()
                 },
                 ..default()
+            }
+        );
+
+        match net_rb {
+            NetworkRigidBody::ServerSimulation { .. } => {
+                commands.entity(e)
+                .insert(Cache::<NetworkRigidBody> {
+                    latest: net_rb.clone(),
+                    second: net_rb.clone(),
+                    elapsed_time: -1.0
+                })
+                .insert(generate_kinematic_ball());
             },
-            Cache::<NetworkRigidBody> {
-                latest: net_rb.clone(),
-                second: net_rb.clone(),
-                elapsed_time: -1.0
+            NetworkRigidBody::ClientPrediction { .. } => {
+                commands.entity(e)
+                .insert(generate_dynamic_ball());
             },
-            RigidBody::KinematicPositionBased,
-            Collider::ball(PLAYER_BALL_RADIUS)
-        ));
+        }
 
         info!("player entity: {e:?} spawned");
     }
@@ -102,7 +119,7 @@ fn apply_net_rb_interpolation_system(
 ) {
     for (mut cache, mut transform) in query.iter_mut() {
         let (latest_trans, latest_rot) = match cache.latest {
-            NetworkRigidBody::ClientPrediction => unimplemented!(),
+            NetworkRigidBody::ClientPrediction { .. } => panic!("client simulating RB"),
             NetworkRigidBody::ServerSimulation { translation, euler } => {
                 (translation, Quat::from_euler(EulerRot::XYZ, 
                     euler.x, 
@@ -112,7 +129,7 @@ fn apply_net_rb_interpolation_system(
             } 
         };
         let (second_trans, second_rot) = match cache.second {
-            NetworkRigidBody::ClientPrediction => unimplemented!(),
+            NetworkRigidBody::ClientPrediction { .. } => panic!("client simulating RB"),
             NetworkRigidBody::ServerSimulation { translation, euler } => {
                 (translation, Quat::from_euler(EulerRot::XYZ, 
                     euler.x, 
@@ -131,5 +148,30 @@ fn apply_net_rb_interpolation_system(
         transform.rotation = rotation;
 
         cache.elapsed_time += fixed_time.delta_seconds();
+    }
+}
+
+fn draw_net_rb_gizmos_system(
+    query: Query<&NetworkRigidBody>,
+    mut gizmos: Gizmos
+) {
+    for net_rb in query.iter() {
+        let (trans, rot) = match net_rb {
+            &NetworkRigidBody::ServerSimulation { .. } => return,
+            &NetworkRigidBody::ClientPrediction { translation, euler } => {
+                (translation, Quat::from_euler(EulerRot::XYZ, 
+                    euler.x, 
+                    euler.y, 
+                    euler.z
+                ))
+            }
+        };
+
+        gizmos.sphere(
+            trans, 
+            rot, 
+            PLAYER_BALL_RADIUS, 
+            Color::GREEN
+        );
     }
 }

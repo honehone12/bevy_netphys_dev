@@ -8,7 +8,10 @@ pub enum NetworkRigidBody {
         translation: Vec3,
         euler: Vec3
     },
-    ClientPrediction
+    ClientPrediction {
+        translation: Vec3,
+        euler: Vec3
+    }
 }
 
 pub struct NetworkRigidBodyPlugin;

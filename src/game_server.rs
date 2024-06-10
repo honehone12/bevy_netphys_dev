@@ -3,7 +3,6 @@ use bevy_replicon::prelude::*;
 use super::{
     *, 
     level::*,
-    config::*,
     network_rigidbody::*
 };
 
@@ -33,18 +32,16 @@ fn handle_server_event(
                     TransformBundle::from_transform(
                         Transform::from_translation(PLAYER_SPAWN_POSITION)
                     ),
-                    NetworkRigidBody::ServerSimulation { 
+                    // NetworkRigidBody::ServerSimulation{ 
+                    //     translation: PLAYER_SPAWN_POSITION, 
+                    //     euler: default() 
+                    // },
+                    NetworkRigidBody::ClientPrediction{
                         translation: PLAYER_SPAWN_POSITION, 
                         euler: default() 
-                    },
-                    RigidBody::Dynamic,
-                    Collider::ball(PLAYER_BALL_RADIUS),
-                    Restitution::coefficient(PLAYER_BALL_RESTITUTION),
-                    ExternalImpulse{
-                        impulse: Vec3::ZERO,
-                        torque_impulse: INITIAL_TORQUE_IMPULSE,
                     }
-                ));
+                ))
+                .insert(generate_dynamic_ball());
 
                 info!("client: {client_id:?} connected");
             }
@@ -65,11 +62,20 @@ fn set_network_rigidbody_system(
     >
 ) {
     for (e, transform, mut net_rb) in query.iter_mut() {
-        *net_rb = NetworkRigidBody::ServerSimulation { 
-            translation: transform.translation, 
-            euler: transform.rotation.to_euler(EulerRot::XYZ).into()
-        };
-
+        let trans = transform.translation;
+        let e_rot = transform.rotation.to_euler(EulerRot::XYZ).into();
+        
+        match *net_rb {
+            NetworkRigidBody::ServerSimulation { ref mut translation, ref mut euler } => {
+                *translation = trans;
+                *euler = e_rot;
+            }
+            NetworkRigidBody::ClientPrediction { ref mut translation, ref mut euler } => {
+                *translation = trans;
+                *euler = e_rot;
+            }
+        }
+        
         info!(
             "rigidbody of entity: {e:?} translation: {} rotation: {}", 
             transform.translation,

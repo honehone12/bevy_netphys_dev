@@ -20,8 +20,8 @@ impl Plugin for GameClientPlugin {
             setup_fixed_camera,
             client_setup_floor
         ))
+        .add_systems(Update, handle_player_spawned)
         .add_systems(FixedPreUpdate, (
-            handle_player_spawned,
             update_net_rb_cache_system,
             apply_net_rb_interpolation_system
         ).chain());
@@ -30,23 +30,41 @@ impl Plugin for GameClientPlugin {
 
 fn handle_player_spawned(
     mut commands: Commands,
-    query: Query<Entity, Added<NetworkRigidBody>>,
+    query: Query<
+        (&NetworkRigidBody, Entity), 
+        Added<NetworkRigidBody>
+    >,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>
 
 ) {
-    for e in query.iter() {
+    for (net_rb, e) in query.iter() {
+        let (trans, rot) = match net_rb {
+            &NetworkRigidBody::ServerSimulation { translation, euler } => {
+                (translation, Quat::from_euler(EulerRot::XYZ, 
+                    euler.x, 
+                    euler.y, 
+                    euler.z
+                ))
+            }
+            &NetworkRigidBody::ClientPrediction => unimplemented!()
+        };
+
         commands.entity(e)
         .insert((
             PbrBundle{
                 mesh: meshes.add(Mesh::from(Sphere::new(PLAYER_BALL_RADIUS))),
                 material: materials.add(PLAYER_COLOR),
-                transform: default(),
+                transform: Transform{
+                    translation: trans,
+                    rotation: rot,
+                    ..default()
+                },
                 ..default()
             },
             Cache::<NetworkRigidBody> {
-                latest: NetworkRigidBody::default_server_simulation(),
-                second: NetworkRigidBody::default_server_simulation(),
+                latest: net_rb.clone(),
+                second: net_rb.clone(),
                 elapsed_time: -1.0
             },
             RigidBody::KinematicPositionBased,

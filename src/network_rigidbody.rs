@@ -11,16 +11,6 @@ pub enum NetworkRigidBody {
     ClientPrediction
 }
 
-impl NetworkRigidBody {
-    #[inline]
-    pub fn default_server_simulation() -> Self {
-        Self::ServerSimulation { 
-            translation: default(), 
-            euler: default() 
-        }
-    }
-}
-
 pub struct NetworkRigidBodyPlugin;
 
 impl Plugin for NetworkRigidBodyPlugin {

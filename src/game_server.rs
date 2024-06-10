@@ -13,10 +13,8 @@ impl Plugin for GameServerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(GameCommonPlugin)
         .add_systems(Startup, server_setup_floor)
-        .add_systems(FixedPostUpdate, (
-            handle_server_event,
-            set_network_rigidbody_system
-        ).chain());
+        .add_systems(Update, handle_server_event)
+        .add_systems(FixedPostUpdate, set_network_rigidbody_system);
     }
 }
 
@@ -32,7 +30,10 @@ fn handle_server_event(
                     TransformBundle::from_transform(
                         Transform::from_translation(PLAYER_SPAWN_POSITION)
                     ),
-                    NetworkRigidBody::default_server_simulation(),
+                    NetworkRigidBody::ServerSimulation { 
+                        translation: PLAYER_SPAWN_POSITION, 
+                        euler: default() 
+                    },
                     RigidBody::Dynamic,
                     Collider::ball(PLAYER_BALL_RADIUS),
                     Restitution::coefficient(PLAYER_BALL_RESTITUTION),

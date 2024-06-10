@@ -21,10 +21,11 @@ impl Plugin for GameClientPlugin {
             client_setup_floor
         ))
         .add_systems(Update, handle_player_spawned)
-        .add_systems(FixedPreUpdate, (
+        .add_systems(FixedUpdate, (
             update_net_rb_cache_system,
             apply_net_rb_interpolation_system
-        ).chain());
+        ).chain(
+        ).before(BEFORE_PHYSICS_SET));
     }
 }
 

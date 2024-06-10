@@ -16,6 +16,9 @@ pub const PLAYER_BALL_RADIUS: f32 = 1.0;
 pub const PLAYER_BALL_RESTITUTION: f32 = 1.0;
 pub const PLAYER_COLOR: Color = Color::RED;
 
+pub const BEFORE_PHYSICS_SET: PhysicsSet = PhysicsSet::SyncBackend;
+pub const AFTER_PHYSICS_SET: PhysicsSet = PhysicsSet::Writeback;
+
 #[derive(Component)]
 pub struct Cache<C: Component> {
     pub latest: C,

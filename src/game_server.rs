@@ -14,7 +14,10 @@ impl Plugin for GameServerPlugin {
         app.add_plugins(GameCommonPlugin)
         .add_systems(Startup, server_setup_floor)
         .add_systems(Update, handle_server_event)
-        .add_systems(FixedPostUpdate, set_network_rigidbody_system);
+        .add_systems(FixedUpdate, 
+            set_network_rigidbody_system
+            .after(AFTER_PHYSICS_SET)
+        );
     }
 }
 

@@ -54,9 +54,14 @@ pub(crate) fn generate_kinematic_ball() -> impl Bundle {
     )
 }
 
-pub(crate) fn generate_dynamic_ball() -> impl Bundle {
+pub(crate) fn generate_dynamic_ball(velocity: Vec3, angular_velocity: Vec3) 
+-> impl Bundle {
     (
         RigidBody::Dynamic,
+        Velocity{
+            linvel: velocity,
+            angvel: angular_velocity
+        },
         Collider::ball(PLAYER_BALL_RADIUS),
         Restitution::coefficient(PLAYER_BALL_RESTITUTION),
         ExternalImpulse::default()

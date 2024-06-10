@@ -38,10 +38,12 @@ fn handle_server_event(
                     // },
                     NetworkRigidBody::ClientPrediction{
                         translation: PLAYER_SPAWN_POSITION, 
-                        euler: default() 
+                        velocity: default(),
+                        euler: default(),
+                        angular_velocity: default() 
                     }
                 ))
-                .insert(generate_dynamic_ball());
+                .insert(generate_dynamic_ball(VELOCITY, ANGULAR_VELOCITY));
 
                 info!("client: {client_id:?} connected");
             }
@@ -56,12 +58,16 @@ fn handle_server_event(
 }
 
 fn set_network_rigidbody_system(
-    mut query: Query<
-        (Entity, &Transform, &mut NetworkRigidBody), 
+    mut query: Query<(
+        Entity, 
+        &Transform, 
+        &mut NetworkRigidBody,
+        &Velocity
+    ), 
         With<RigidBody>
     >
 ) {
-    for (e, transform, mut net_rb) in query.iter_mut() {
+    for (e, transform, mut net_rb, vel) in query.iter_mut() {
         let trans = transform.translation;
         let e_rot = transform.rotation.to_euler(EulerRot::XYZ).into();
         
@@ -70,16 +76,25 @@ fn set_network_rigidbody_system(
                 *translation = trans;
                 *euler = e_rot;
             }
-            NetworkRigidBody::ClientPrediction { ref mut translation, ref mut euler } => {
+            NetworkRigidBody::ClientPrediction { 
+                ref mut translation,
+                ref mut velocity, 
+                ref mut euler,
+                ref mut angular_velocity 
+            } => {
                 *translation = trans;
+                *velocity = vel.linvel;
                 *euler = e_rot;
+                *angular_velocity = vel.angvel;
             }
         }
         
         info!(
-            "rigidbody of entity: {e:?} translation: {} rotation: {}", 
+            "rigidbody of entity: {e:?} translation: {} rotation: {} velocity: {} angular velocity: {}", 
             transform.translation,
-            transform.rotation
+            transform.rotation,
+            vel.linvel,
+            vel.angvel
         );
     }
 }

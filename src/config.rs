@@ -34,6 +34,9 @@ pub const PHYSICS_FIXED_TICK_DELTA: f32 = 1.0 / PHYSICS_FIXED_TICK_RATE;
 pub const IMPULSE: Vec3 = Vec3::new(0.0, 15.0, 0.0);
 pub const TORQUE_IMPULSE: Vec3 = Vec3::new(0.015, 0.0, 0.0);
 
+pub const VELOCITY: Vec3 = Vec3::new(0.0, -1.5, 0.0);
+pub const ANGULAR_VELOCITY: Vec3 = Vec3::new(0.15, 0.0, 0.0);
+
 pub fn get_dev_protocol_id() -> u64 {
     if cfg!(debug_assertions) {
         0x655ea1eecade99ad

@@ -50,7 +50,7 @@ fn handle_player_spawned(
                     euler.z
                 ))
             }
-            &NetworkRigidBody::ClientPrediction { translation, euler } => {
+            &NetworkRigidBody::ClientPrediction { translation, euler, .. } => {
                 (translation, Quat::from_euler(EulerRot::XYZ, 
                     euler.x, 
                     euler.y, 
@@ -83,9 +83,9 @@ fn handle_player_spawned(
                 })
                 .insert(generate_kinematic_ball());
             },
-            NetworkRigidBody::ClientPrediction { .. } => {
+            NetworkRigidBody::ClientPrediction { velocity, angular_velocity, .. } => {
                 commands.entity(e)
-                .insert(generate_dynamic_ball());
+                .insert(generate_dynamic_ball(*velocity, *angular_velocity));
             },
         }
 
@@ -158,7 +158,7 @@ fn draw_net_rb_gizmos_system(
     for net_rb in query.iter() {
         let (trans, rot) = match net_rb {
             &NetworkRigidBody::ServerSimulation { .. } => return,
-            &NetworkRigidBody::ClientPrediction { translation, euler } => {
+            &NetworkRigidBody::ClientPrediction { translation, euler, .. } => {
                 (translation, Quat::from_euler(EulerRot::XYZ, 
                     euler.x, 
                     euler.y, 

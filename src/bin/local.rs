@@ -39,14 +39,14 @@ fn setup_ball(
 ) {
     commands.spawn((
         PbrBundle{
-            mesh: meshes.add(Mesh::from(Sphere::new(PLAYER_BALL_RADIUS))),
-            material: materials.add(PLAYER_COLOR),
-            transform: Transform::from_translation(PLAYER_SPAWN_POSITION),
+            mesh: meshes.add(Mesh::from(Sphere::new(BALL_RADIUS))),
+            material: materials.add(BALL_COLOR),
+            transform: Transform::from_translation(BALL_SPAWN_POSITION),
             ..default()
         },
         RigidBody::Dynamic,
-        Collider::ball(PLAYER_BALL_RADIUS),
-        Restitution::coefficient(PLAYER_BALL_RESTITUTION),
+        Collider::ball(BALL_RADIUS),
+        Restitution::coefficient(BALL_RESTITUTION),
         ExternalImpulse{
             impulse: Vec3::ZERO,
             torque_impulse: TORQUE_IMPULSE,

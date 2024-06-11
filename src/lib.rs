@@ -6,18 +6,66 @@ pub mod game_server;
 pub mod game_client;
 pub mod network_rigidbody;
 
+use bevy_replicon::prelude::AppRuleExt;
+use serde::{Deserialize, Serialize};
 use bevy::prelude::*;
+use bevy_replicon::prelude::*;
 use bevy_rapier3d::prelude::*;
 use config::*;
 use network_rigidbody::*;
 
-pub const PLAYER_SPAWN_POSITION: Vec3 = Vec3::new(0.0, 25.0, 0.0);
-pub const PLAYER_BALL_RADIUS: f32 = 1.0;
-pub const PLAYER_BALL_RESTITUTION: f32 = 0.8;
-pub const PLAYER_COLOR: Color = Color::RED;
+pub const BALL_SPAWN_POSITION: Vec3 = Vec3::new(0.0, 15.0, 0.0);
+pub const BALL_SPAWN_EULER: Vec3 = Vec3::new(0.0, 0.0, 0.0);
+pub const BALL_SPAWN_ROTATION: Quat = Quat::IDENTITY;
+pub const BALL_RADIUS: f32 = 1.0;
+pub const BALL_RESTITUTION: f32 = 0.8;
+pub const BALL_COLOR: Color = Color::RED;
+
+pub const IMPULSE: Vec3 = Vec3::new(0.0, 100.0, 0.0);
+pub const TORQUE_IMPULSE: Vec3 = Vec3::new(5.0, 5.0, 0.0);
+
+pub const VELOCITY: Vec3 = Vec3::new(0.0, 30.0, 0.0);
+pub const ANGULAR_VELOCITY: Vec3 = Vec3::new(5.0, 5.0, 0.0);
+
+pub const DROPPED_Y: f32 = -15.0;
 
 pub const BEFORE_PHYSICS_SET: PhysicsSet = PhysicsSet::SyncBackend;
 pub const AFTER_PHYSICS_SET: PhysicsSet = PhysicsSet::Writeback;
+
+pub const FIRE_KEY: KeyCode = KeyCode::Space;
+
+#[derive(Component, Serialize, Deserialize)]
+pub struct NetworkId(ClientId);
+
+impl NetworkId {
+    #[inline]
+    pub fn new(client_id: ClientId) -> Self {
+        Self(client_id)
+    }
+
+    #[inline]
+    pub fn client_id(&self) -> ClientId {
+        self.0
+    }
+}
+
+#[derive(Component, Serialize, Deserialize)]
+pub struct NetworkFireBall(ClientId);
+
+impl NetworkFireBall {
+    #[inline]
+    pub fn new(caster: ClientId) -> Self {
+        Self(caster)
+    }
+
+    #[inline]
+    pub fn caster(&self) -> ClientId {
+        self.0
+    }
+}
+
+#[derive(Event, Serialize, Deserialize)]
+pub struct NetworkFire;
 
 #[derive(Component)]
 pub struct Cache<C: Component> {
@@ -43,14 +91,17 @@ impl Plugin for GameCommonPlugin {
             RapierPhysicsPlugin::<()>::default()
             .in_fixed_schedule(),
             NetworkRigidBodyPlugin
-        ));
+        ))
+        .replicate::<NetworkId>()
+        .replicate::<NetworkFireBall>()
+        .add_client_event::<NetworkFire>(ChannelKind::Ordered);
     }
 }
 
 pub(crate) fn generate_kinematic_ball() -> impl Bundle {
     (
         RigidBody::KinematicPositionBased,
-        Collider::ball(PLAYER_BALL_RADIUS)
+        Collider::ball(BALL_RADIUS)
     )
 }
 
@@ -62,8 +113,8 @@ pub(crate) fn generate_dynamic_ball(velocity: Vec3, angular_velocity: Vec3)
             linvel: velocity,
             angvel: angular_velocity
         },
-        Collider::ball(PLAYER_BALL_RADIUS),
-        Restitution::coefficient(PLAYER_BALL_RESTITUTION),
-        ExternalImpulse::default()
+        Collider::ball(BALL_RADIUS),
+        Ccd::enabled(),
+        Restitution::coefficient(BALL_RESTITUTION),
     )
 }

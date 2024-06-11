@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
+use bevy_replicon::client::ClientSet;
 use super::{
     *,
     network_rigidbody::*,
@@ -19,54 +20,69 @@ impl Plugin for GameClientPlugin {
             setup_fixed_camera,
             client_setup_floor
         ))
-        .add_systems(Update, (
-            handle_player_spawned,
-            draw_net_rb_gizmos_system
-        ))
+        .add_systems(PreUpdate, 
+            handle_fire
+            .after(ClientSet::Receive)
+        )
         .add_systems(FixedUpdate, (
             update_net_rb_cache_system,
             apply_net_rb_interpolation_system
         ).chain(
-        ).before(BEFORE_PHYSICS_SET));
+        ).before(BEFORE_PHYSICS_SET))
+        .add_systems(FixedUpdate, 
+            draw_net_rb_gizmos_system
+            .after(AFTER_PHYSICS_SET)
+        )
+        .add_systems(Update, handle_input);
     }
 }
 
-fn handle_player_spawned(
+fn handle_input(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut fire: EventWriter<NetworkFire>
+) {
+    if keyboard.just_pressed(FIRE_KEY) {
+        fire.send(NetworkFire);
+    }
+}
+
+fn handle_fire(
     mut commands: Commands,
-    query: Query<
-        (&NetworkRigidBody, Entity), 
-        Added<NetworkRigidBody>
+    query: Query<(
+        Entity, 
+        &NetworkRigidBody,
+        &NetworkFireBall,
+    ), 
+        Added<NetworkFireBall>
     >,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>
 
 ) {
-    for (net_rb, e) in query.iter() {
-        let (trans, rot) = match net_rb {
-            &NetworkRigidBody::ServerSimulation { translation, euler } => {
-                (translation, Quat::from_euler(EulerRot::XYZ, 
-                    euler.x, 
-                    euler.y, 
-                    euler.z
-                ))
-            }
-            &NetworkRigidBody::ClientPrediction { translation, euler, .. } => {
-                (translation, Quat::from_euler(EulerRot::XYZ, 
-                    euler.x, 
-                    euler.y, 
-                    euler.z
-                ))
-            }
+    for (e, net_rb, net_ball) in query.iter() {
+        let (trans, euler, vel, ang) = match net_rb {
+            &NetworkRigidBody::ServerSimulation { translation, euler } 
+            => (translation, euler, default(), default()),
+            &NetworkRigidBody::ClientPrediction { 
+                translation,
+                velocity, 
+                euler,
+                angular_velocity 
+            } => (translation, euler, velocity, angular_velocity)
         };
 
         commands.entity(e)
         .insert(
             PbrBundle{
-                mesh: meshes.add(Mesh::from(Sphere::new(PLAYER_BALL_RADIUS))),
-                material: materials.add(PLAYER_COLOR),
+                mesh: meshes.add(Mesh::from(Sphere::new(BALL_RADIUS))),
+                material: materials.add(BALL_COLOR),
                 transform: Transform{
                     translation: trans,
-                    rotation: rot,
+                    rotation: Quat::from_euler(EulerRot::XYZ, 
+                        euler.x, 
+                        euler.y, 
+                        euler.z
+                    ),
                     ..default()
                 },
                 ..default()
@@ -83,13 +99,20 @@ fn handle_player_spawned(
                 })
                 .insert(generate_kinematic_ball());
             },
-            NetworkRigidBody::ClientPrediction { velocity, angular_velocity, .. } => {
+            NetworkRigidBody::ClientPrediction { .. } => {
                 commands.entity(e)
-                .insert(generate_dynamic_ball(*velocity, *angular_velocity));
+                .insert(generate_dynamic_ball(vel, ang));
+                // .insert(ExternalImpulse{
+                //     impulse: IMPULSE,
+                //     torque_impulse: TORQUE_IMPULSE,
+                // });
             },
         }
 
-        info!("player entity: {e:?} spawned");
+        info!(
+            "fire ball: {e:?} spawned by : {:?}", 
+            net_ball.caster()
+        );
     }
 }
 
@@ -170,7 +193,7 @@ fn draw_net_rb_gizmos_system(
         gizmos.sphere(
             trans, 
             rot, 
-            PLAYER_BALL_RADIUS, 
+            BALL_RADIUS, 
             Color::GREEN
         );
     }

@@ -1,5 +1,5 @@
 use std::net::{IpAddr, Ipv4Addr};
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowResolution};
 use bevy_replicon::prelude::*;
 use bevy_netphys_dev::{
     config::*,
@@ -23,7 +23,16 @@ fn main() {
         token_expire_seconds: DEV_TOKEN_EXPIRE_SEC,
     };
     
-    app.add_plugins(DefaultPlugins)
+    app.add_plugins(
+        DefaultPlugins
+        .set(WindowPlugin{
+            primary_window: Some(Window{
+                resolution: WindowResolution::new(800.0, 500.0),
+                ..default()
+            }),
+            ..default()
+        })
+    )
     .add_plugins(builder.build_replicon())
     .add_plugins(GameClientPlugin);
 

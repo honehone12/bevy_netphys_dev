@@ -67,23 +67,17 @@ fn handle_fire(
                     ..default()
                 }
             ),
-            // NetworkRigidBody::ClientPrediction {
-            //     translation: BALL_SPAWN_POSITION,
-            //     velocity: VELOCITY,
-            //     euler: BALL_SPAWN_EULER,
-            //     angular_velocity: ANGULAR_VELOCITY,
-            // },
             // NetworkRigidBody::ServerSimulation { 
             //     translation: BALL_SPAWN_POSITION, 
             //     euler: BALL_SPAWN_EULER 
             // },
-            NetworkRigidBody::Velokinematic { 
+            NetworkRigidBody::ClientPrediction { 
                 translation: BALL_SPAWN_POSITION, 
-                velocity: VELOCITY, 
                 euler: BALL_SPAWN_EULER, 
-                angular_velocity: ANGULAR_VELOCITY 
+                velocity: INITIAL_VELOCITY, 
+                angular_velocity: INITIAL_ANGULAR_VELOCITY 
             },
-            generate_dynamic_ball(VELOCITY, ANGULAR_VELOCITY)
+            generate_dynamic_ball(INITIAL_VELOCITY, INITIAL_ANGULAR_VELOCITY)
         ));
     }
 }
@@ -119,22 +113,11 @@ fn set_network_rigidbody_system(
                 *translation = trans;
                 *euler = quat_to_euler(rot);
             }
-            NetworkRigidBody::ClientSimulation { 
+            NetworkRigidBody::ClientPrediction { 
                 ref mut translation, 
-                ref mut velocity,
                 ref mut euler,
+                ref mut velocity,
                 ref mut angular_velocity, 
-            } => {
-                *translation = trans;
-                *velocity = vel.linvel;
-                *euler = quat_to_euler(rot);
-                *angular_velocity = vel.angvel;
-            }
-            NetworkRigidBody::Velokinematic { 
-                ref mut translation, 
-                ref mut velocity, 
-                ref mut euler, 
-                ref mut angular_velocity 
             } => {
                 *translation = trans;
                 *velocity = vel.linvel;

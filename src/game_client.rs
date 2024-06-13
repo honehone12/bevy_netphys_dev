@@ -64,9 +64,7 @@ fn handle_fire(
         let (trans, euler) = match net_rb {
             &NetworkRigidBody::ServerSimulation { translation, euler } 
             => (translation, euler),
-            &NetworkRigidBody::ClientSimulation { translation, euler, .. } 
-            => (translation, euler),
-            &NetworkRigidBody::Velokinematic { translation, euler, ..} 
+            &NetworkRigidBody::ClientPrediction { translation, euler, .. } 
             => (translation, euler)
         };
 
@@ -93,16 +91,12 @@ fn handle_fire(
                         second: net_rb.clone(),
                         elapsed_time: -1.0
                     },
-                    generate_p_kinematic_ball()
+                    generate_kinematic_ball()
                 ));
             },
-            &NetworkRigidBody::ClientSimulation { velocity, angular_velocity, .. } => {
+            &NetworkRigidBody::ClientPrediction { velocity, angular_velocity, .. } => {
                 commands.entity(e)
                 .insert(generate_dynamic_ball(velocity, angular_velocity));
-            },
-            &NetworkRigidBody::Velokinematic { velocity, angular_velocity, .. } => {
-                commands.entity(e)
-                .insert(generate_v_kinematic_ball(velocity, angular_velocity));
             }
         }
 
@@ -121,9 +115,9 @@ fn apply_net_rb_velocity_system(
 ) {
     for (net_rb, mut velocity) in query.iter_mut() {
         let (linear, angular) = match net_rb {
-            &NetworkRigidBody::Velokinematic { velocity, angular_velocity, .. }
+            &NetworkRigidBody::ClientPrediction { velocity, angular_velocity, .. }
             => (velocity, angular_velocity),
-            _ => return
+            _ => panic!("should be client predicted RB")
         };
 
         velocity.linvel = linear;
@@ -187,9 +181,7 @@ fn draw_net_rb_gizmos_system(
         let (trans, rot) = match net_rb {
             &NetworkRigidBody::ServerSimulation { translation, euler } 
             => (translation, euler_to_quat(euler)), 
-            &NetworkRigidBody::ClientSimulation { translation, euler, .. } 
-            => (translation, euler_to_quat(euler)),
-            &NetworkRigidBody::Velokinematic { translation, euler, .. }
+            &NetworkRigidBody::ClientPrediction { translation, euler, .. } 
             => (translation, euler_to_quat(euler))
         };
 

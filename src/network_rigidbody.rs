@@ -8,16 +8,10 @@ pub enum NetworkRigidBody {
         translation: Vec3,
         euler: Vec3
     },
-    ClientSimulation {
+    ClientPrediction {
         translation: Vec3,
-        velocity: Vec3,
         euler: Vec3,
-        angular_velocity: Vec3
-    },
-    Velokinematic {
-        translation: Vec3,
         velocity: Vec3,
-        euler: Vec3,
         angular_velocity: Vec3
     }
 }

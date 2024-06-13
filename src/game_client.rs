@@ -25,6 +25,7 @@ impl Plugin for GameClientPlugin {
             .after(ClientSet::Receive)
         )
         .add_systems(FixedUpdate, (
+            apply_net_rb_velocity_system,
             update_net_rb_cache_system,
             apply_net_rb_interpolation_system
         ).chain(
@@ -60,15 +61,13 @@ fn handle_fire(
 
 ) {
     for (e, net_rb, net_ball) in query.iter() {
-        let (trans, rot, vel, ang) = match net_rb {
-            &NetworkRigidBody::ServerSimulation { translation, rotation } 
-            => (translation, rotation, default(), default()),
-            &NetworkRigidBody::ClientPrediction { 
-                translation,
-                velocity, 
-                rotation,
-                angular_velocity 
-            } => (translation, rotation, velocity, angular_velocity)
+        let (trans, euler) = match net_rb {
+            &NetworkRigidBody::ServerSimulation { translation, euler } 
+            => (translation, euler),
+            &NetworkRigidBody::ClientSimulation { translation, euler, .. } 
+            => (translation, euler),
+            &NetworkRigidBody::Velokinematic { translation, euler, ..} 
+            => (translation, euler)
         };
 
         commands.entity(e)
@@ -78,7 +77,7 @@ fn handle_fire(
                 material: materials.add(BALL_COLOR),
                 transform: Transform{
                     translation: trans,
-                    rotation: rot,
+                    rotation: euler_to_quat(euler),
                     ..default()
                 },
                 ..default()
@@ -86,29 +85,49 @@ fn handle_fire(
         );
 
         match net_rb {
-            NetworkRigidBody::ServerSimulation { .. } => {
+            &NetworkRigidBody::ServerSimulation { .. } => {
                 commands.entity(e)
-                .insert(Cache::<NetworkRigidBody> {
-                    latest: net_rb.clone(),
-                    second: net_rb.clone(),
-                    elapsed_time: -1.0
-                })
-                .insert(generate_kinematic_ball());
+                .insert((
+                    Cache::<NetworkRigidBody> {
+                        latest: net_rb.clone(),
+                        second: net_rb.clone(),
+                        elapsed_time: -1.0
+                    },
+                    generate_p_kinematic_ball()
+                ));
             },
-            NetworkRigidBody::ClientPrediction { .. } => {
+            &NetworkRigidBody::ClientSimulation { velocity, angular_velocity, .. } => {
                 commands.entity(e)
-                .insert(generate_dynamic_ball(vel, ang));
-                // .insert(ExternalImpulse{
-                //     impulse: IMPULSE,
-                //     torque_impulse: TORQUE_IMPULSE,
-                // });
+                .insert(generate_dynamic_ball(velocity, angular_velocity));
             },
+            &NetworkRigidBody::Velokinematic { velocity, angular_velocity, .. } => {
+                commands.entity(e)
+                .insert(generate_v_kinematic_ball(velocity, angular_velocity));
+            }
         }
 
         info!(
             "fire ball: {e:?} spawned by : {:?}", 
             net_ball.caster()
         );
+    }
+}
+
+fn apply_net_rb_velocity_system(
+    mut query: Query<
+        (&NetworkRigidBody, &mut Velocity),
+        Changed<NetworkRigidBody>
+    >
+) {
+    for (net_rb, mut velocity) in query.iter_mut() {
+        let (linear, angular) = match net_rb {
+            &NetworkRigidBody::Velokinematic { velocity, angular_velocity, .. }
+            => (velocity, angular_velocity),
+            _ => return
+        };
+
+        velocity.linvel = linear;
+        velocity.angvel = angular;
     }
 }
 
@@ -138,16 +157,14 @@ fn apply_net_rb_interpolation_system(
 ) {
     for (mut cache, mut transform) in query.iter_mut() {
         let (latest_trans, latest_rot) = match cache.latest {
-            NetworkRigidBody::ClientPrediction { .. } => panic!("client simulating RB"),
-            NetworkRigidBody::ServerSimulation { translation, rotation } => {
-                (translation, rotation)
-            } 
+            NetworkRigidBody::ServerSimulation { translation, euler } 
+            => (translation, euler_to_quat(euler)),
+            _ => panic!("should be server simulated RB") 
         };
         let (second_trans, second_rot) = match cache.second {
-            NetworkRigidBody::ClientPrediction { .. } => panic!("client simulating RB"),
-            NetworkRigidBody::ServerSimulation { translation, rotation } => {
-                (translation, rotation)
-            } 
+            NetworkRigidBody::ServerSimulation { translation, euler } 
+            => (translation, euler_to_quat(euler)),
+            _ => panic!("should be server simulated RB")
         };
 
         let per = (cache.elapsed_time / DEV_NETWORK_TICK_DELTA)
@@ -168,10 +185,12 @@ fn draw_net_rb_gizmos_system(
 ) {
     for net_rb in query.iter() {
         let (trans, rot) = match net_rb {
-            &NetworkRigidBody::ServerSimulation { .. } => return,
-            &NetworkRigidBody::ClientPrediction { translation, rotation, .. } => {
-                (translation, rotation)
-            }
+            &NetworkRigidBody::ServerSimulation { translation, euler } 
+            => (translation, euler_to_quat(euler)), 
+            &NetworkRigidBody::ClientSimulation { translation, euler, .. } 
+            => (translation, euler_to_quat(euler)),
+            &NetworkRigidBody::Velokinematic { translation, euler, .. }
+            => (translation, euler_to_quat(euler))
         };
 
         gizmos.sphere(

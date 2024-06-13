@@ -6,14 +6,18 @@ use serde::{Serialize, Deserialize};
 pub enum NetworkRigidBody {
     ServerSimulation {
         translation: Vec3,
-        //euler: Vec3
-        rotation: Quat,
+        euler: Vec3
     },
-    ClientPrediction {
+    ClientSimulation {
         translation: Vec3,
         velocity: Vec3,
-        //euler: Vec3,
-        rotation: Quat,
+        euler: Vec3,
+        angular_velocity: Vec3
+    },
+    Velokinematic {
+        translation: Vec3,
+        velocity: Vec3,
+        euler: Vec3,
         angular_velocity: Vec3
     }
 }

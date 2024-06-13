@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-pub const FLOOR_SIZE: Vec3 = Vec3::new(100.0, 1.0, 100.0);
+pub const FLOOR_SIZE: Vec3 = Vec3::new(60.0, 1.0, 60.0);
 pub const FLOOR_COLOR: Color = Color::rgb(0.5, 0.5, 0.5);
 pub const FLOOR_POSITION: Vec3 = Vec3::new(0.0, -0.5, 0.0);
 pub const LIGHT_POSITION: Vec3 = Vec3::new(0.0, 50.0, 0.0);

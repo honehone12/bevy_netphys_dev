@@ -27,7 +27,7 @@ fn main() {
         DefaultPlugins
         .set(WindowPlugin{
             primary_window: Some(Window{
-                resolution: WindowResolution::new(800.0, 500.0),
+                resolution: WindowResolution::new(1920.0, 1080.0 /*1280.0, 720.0*/),
                 ..default()
             }),
             ..default()

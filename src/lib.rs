@@ -98,9 +98,21 @@ impl Plugin for GameCommonPlugin {
     }
 }
 
-pub(crate) fn generate_kinematic_ball() -> impl Bundle {
+pub(crate) fn generate_p_kinematic_ball() -> impl Bundle {
     (
         RigidBody::KinematicPositionBased,
+        Collider::ball(BALL_RADIUS)
+    )
+}
+
+pub(crate) fn generate_v_kinematic_ball(velocity: Vec3, angular_velocity: Vec3) 
+-> impl Bundle {
+    (
+        RigidBody::KinematicVelocityBased,
+        Velocity{
+            linvel: velocity,
+            angvel: angular_velocity
+        },
         Collider::ball(BALL_RADIUS)
     )
 }
@@ -117,4 +129,12 @@ pub(crate) fn generate_dynamic_ball(velocity: Vec3, angular_velocity: Vec3)
         Ccd::enabled(),
         Restitution::coefficient(BALL_RESTITUTION),
     )
+}
+
+pub fn euler_to_quat(euler: Vec3) -> Quat {
+    Quat::from_euler(EulerRot::XYZ, euler.x, euler.y, euler.z)
+}
+
+pub fn quat_to_euler(quat: Quat) -> Vec3 {
+    quat.to_euler(EulerRot::XYZ).into()
 }

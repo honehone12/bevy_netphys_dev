@@ -60,31 +60,31 @@ fn handle_fire(
         commands.spawn((
             Replicated,
             NetworkFireBall::new(*client_id),
-            NetworkRigidBody::ClientPrediction {
-                translation: BALL_SPAWN_POSITION,
-                velocity: VELOCITY,
-                //euler: BALL_SPAWN_EULER,
-                rotation: Quat::IDENTITY,
-                angular_velocity: ANGULAR_VELOCITY,
-            },
-            // NetworkRigidBody::ServerSimulation { 
-            //     translation: BALL_SPAWN_POSITION, 
-            //     euler: BALL_SPAWN_EULER 
-            // },
             TransformBundle::from_transform(
                 Transform{
                     translation: BALL_SPAWN_POSITION,
                     rotation: BALL_SPAWN_ROTATION,
                     ..default()
                 }
-            )
-        ))
-        .insert(generate_dynamic_ball(VELOCITY, ANGULAR_VELOCITY))
-        // .insert(ExternalImpulse{
-        //     impulse: IMPULSE,
-        //     torque_impulse: TORQUE_IMPULSE,
-        // });
-        ;
+            ),
+            // NetworkRigidBody::ClientPrediction {
+            //     translation: BALL_SPAWN_POSITION,
+            //     velocity: VELOCITY,
+            //     euler: BALL_SPAWN_EULER,
+            //     angular_velocity: ANGULAR_VELOCITY,
+            // },
+            // NetworkRigidBody::ServerSimulation { 
+            //     translation: BALL_SPAWN_POSITION, 
+            //     euler: BALL_SPAWN_EULER 
+            // },
+            NetworkRigidBody::Velokinematic { 
+                translation: BALL_SPAWN_POSITION, 
+                velocity: VELOCITY, 
+                euler: BALL_SPAWN_EULER, 
+                angular_velocity: ANGULAR_VELOCITY 
+            },
+            generate_dynamic_ball(VELOCITY, ANGULAR_VELOCITY)
+        ));
     }
 }
 
@@ -115,19 +115,30 @@ fn set_network_rigidbody_system(
         let rot = transform.rotation;
         
         match *net_rb {
-            NetworkRigidBody::ServerSimulation { ref mut translation, ref mut rotation } => {
+            NetworkRigidBody::ServerSimulation { ref mut translation, ref mut euler } => {
                 *translation = trans;
-                *rotation = rot;
+                *euler = quat_to_euler(rot);
             }
-            NetworkRigidBody::ClientPrediction { 
+            NetworkRigidBody::ClientSimulation { 
                 ref mut translation, 
                 ref mut velocity,
-                ref mut rotation,
+                ref mut euler,
                 ref mut angular_velocity, 
             } => {
                 *translation = trans;
                 *velocity = vel.linvel;
-                *rotation = rot;
+                *euler = quat_to_euler(rot);
+                *angular_velocity = vel.angvel;
+            }
+            NetworkRigidBody::Velokinematic { 
+                ref mut translation, 
+                ref mut velocity, 
+                ref mut euler, 
+                ref mut angular_velocity 
+            } => {
+                *translation = trans;
+                *velocity = vel.linvel;
+                *euler = quat_to_euler(rot);
                 *angular_velocity = vel.angvel;
             }
         }

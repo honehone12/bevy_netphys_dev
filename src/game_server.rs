@@ -63,7 +63,8 @@ fn handle_fire(
             NetworkRigidBody::ClientPrediction {
                 translation: BALL_SPAWN_POSITION,
                 velocity: VELOCITY,
-                euler: BALL_SPAWN_EULER,
+                //euler: BALL_SPAWN_EULER,
+                rotation: Quat::IDENTITY,
                 angular_velocity: ANGULAR_VELOCITY,
             },
             // NetworkRigidBody::ServerSimulation { 
@@ -111,22 +112,22 @@ fn set_network_rigidbody_system(
 ) {
     for (e, transform, mut net_rb, vel) in query.iter_mut() {
         let trans = transform.translation;
-        let e_rot = transform.rotation.to_euler(EulerRot::XYZ).into();
+        let rot = transform.rotation;
         
         match *net_rb {
-            NetworkRigidBody::ServerSimulation { ref mut translation, ref mut euler } => {
+            NetworkRigidBody::ServerSimulation { ref mut translation, ref mut rotation } => {
                 *translation = trans;
-                *euler = e_rot;
+                *rotation = rot;
             }
             NetworkRigidBody::ClientPrediction { 
                 ref mut translation, 
                 ref mut velocity,
-                ref mut euler,
+                ref mut rotation,
                 ref mut angular_velocity, 
             } => {
                 *translation = trans;
                 *velocity = vel.linvel;
-                *euler = e_rot;
+                *rotation = rot;
                 *angular_velocity = vel.angvel;
             }
         }

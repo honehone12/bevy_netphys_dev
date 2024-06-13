@@ -60,15 +60,15 @@ fn handle_fire(
 
 ) {
     for (e, net_rb, net_ball) in query.iter() {
-        let (trans, euler, vel, ang) = match net_rb {
-            &NetworkRigidBody::ServerSimulation { translation, euler } 
-            => (translation, euler, default(), default()),
+        let (trans, rot, vel, ang) = match net_rb {
+            &NetworkRigidBody::ServerSimulation { translation, rotation } 
+            => (translation, rotation, default(), default()),
             &NetworkRigidBody::ClientPrediction { 
                 translation,
                 velocity, 
-                euler,
+                rotation,
                 angular_velocity 
-            } => (translation, euler, velocity, angular_velocity)
+            } => (translation, rotation, velocity, angular_velocity)
         };
 
         commands.entity(e)
@@ -78,11 +78,7 @@ fn handle_fire(
                 material: materials.add(BALL_COLOR),
                 transform: Transform{
                     translation: trans,
-                    rotation: Quat::from_euler(EulerRot::XYZ, 
-                        euler.x, 
-                        euler.y, 
-                        euler.z
-                    ),
+                    rotation: rot,
                     ..default()
                 },
                 ..default()
@@ -143,22 +139,14 @@ fn apply_net_rb_interpolation_system(
     for (mut cache, mut transform) in query.iter_mut() {
         let (latest_trans, latest_rot) = match cache.latest {
             NetworkRigidBody::ClientPrediction { .. } => panic!("client simulating RB"),
-            NetworkRigidBody::ServerSimulation { translation, euler } => {
-                (translation, Quat::from_euler(EulerRot::XYZ, 
-                    euler.x, 
-                    euler.y, 
-                    euler.z
-                ))
+            NetworkRigidBody::ServerSimulation { translation, rotation } => {
+                (translation, rotation)
             } 
         };
         let (second_trans, second_rot) = match cache.second {
             NetworkRigidBody::ClientPrediction { .. } => panic!("client simulating RB"),
-            NetworkRigidBody::ServerSimulation { translation, euler } => {
-                (translation, Quat::from_euler(EulerRot::XYZ, 
-                    euler.x, 
-                    euler.y, 
-                    euler.z
-                ))
+            NetworkRigidBody::ServerSimulation { translation, rotation } => {
+                (translation, rotation)
             } 
         };
 
@@ -181,12 +169,8 @@ fn draw_net_rb_gizmos_system(
     for net_rb in query.iter() {
         let (trans, rot) = match net_rb {
             &NetworkRigidBody::ServerSimulation { .. } => return,
-            &NetworkRigidBody::ClientPrediction { translation, euler, .. } => {
-                (translation, Quat::from_euler(EulerRot::XYZ, 
-                    euler.x, 
-                    euler.y, 
-                    euler.z
-                ))
+            &NetworkRigidBody::ClientPrediction { translation, rotation, .. } => {
+                (translation, rotation)
             }
         };
 

@@ -17,7 +17,7 @@ codegen-units = 1
 [dependencies]
 anyhow = "1.0.86"
 bevy = "0.13.2"
-bevy_rapier3d = { version = "0.26.0", default-features = false, features = ["dim3", "debug-render-3d"] }
+bevy_xpbd_3d = { version = "0.4.2", default-features = false, features = ["3d", "f32", "default-collider", "parry-f32", "debug-plugin"]}
 bevy_replicon = "0.26.2"
 bevy_replicon_renet = "0.3.0"
 serde = "1.0.203"

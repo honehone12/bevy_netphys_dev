@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::*;
+use bevy_xpbd_3d::prelude::*;
 use bevy_replicon::client::ClientSet;
 use super::{
     *,
@@ -13,7 +13,7 @@ impl Plugin for GameClientPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             GameCommonPlugin,
-            RapierDebugRenderPlugin::default()
+            PhysicsDebugPlugin::default()
         ))
         .add_systems(Startup, (
             setup_light,
@@ -108,20 +108,23 @@ fn handle_fire(
 }
 
 fn apply_net_rb_velocity_system(
-    mut query: Query<
-        (&NetworkRigidBody, &mut Velocity),
+    mut query: Query<(
+        &NetworkRigidBody, 
+        &mut LinearVelocity, 
+        &mut AngularVelocity
+    ),
         Changed<NetworkRigidBody>
     >
 ) {
-    for (net_rb, mut velocity) in query.iter_mut() {
+    for (net_rb, mut lin_vel, mut ang_vel) in query.iter_mut() {
         let (linear, angular) = match net_rb {
             &NetworkRigidBody::ClientPrediction { velocity, angular_velocity, .. }
             => (velocity, angular_velocity),
             _ => panic!("should be client predicted RB")
         };
 
-        velocity.linvel = linear;
-        velocity.angvel = angular;
+        lin_vel.0 = linear;
+        ang_vel.0 = angular;
     }
 }
 

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_xpbd_3d::prelude::*;
+use bevy_rapier3d::prelude::*;
 
 pub const FLOOR_SIZE: Vec3 = Vec3::new(60.0, 1.0, 60.0);
 pub const FLOOR_COLOR: Color = Color::rgb(0.5, 0.5, 0.5);
@@ -31,11 +31,9 @@ pub fn server_setup_floor(mut commands: Commands) {
     .insert(floor_collider());
 }
 
-pub fn floor_collider() -> impl Bundle {
-    (
-        RigidBody::Static,
-        Collider::cuboid(FLOOR_SIZE.x, FLOOR_SIZE.y, FLOOR_SIZE.z)
-    )
+pub fn floor_collider() -> Collider {
+    let extents = FLOOR_SIZE * 0.5;
+    Collider::cuboid(extents.x, extents.y, extents.z)
 }
 
 pub fn setup_light(mut commands: Commands) {

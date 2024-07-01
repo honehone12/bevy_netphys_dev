@@ -99,13 +99,12 @@ fn set_network_rigidbody_system(
         Entity, 
         &Transform, 
         &mut NetworkRigidBody,
-        &LinearVelocity,
-        &AngularVelocity
+        &Velocity
     ), 
         With<RigidBody>
     >
 ) {
-    for (e, transform, mut net_rb, lin_vel, ang_vel) in query.iter_mut() {
+    for (e, transform, mut net_rb, vel) in query.iter_mut() {
         let trans = transform.translation;
         let rot = transform.rotation;
         
@@ -121,9 +120,9 @@ fn set_network_rigidbody_system(
                 ref mut angular_velocity, 
             } => {
                 *translation = trans;
-                *velocity = lin_vel.0;
+                *velocity = vel.linvel;
                 *euler = quat_to_euler(rot);
-                *angular_velocity = ang_vel.0;
+                *angular_velocity = vel.angvel;
             }
         }
         
@@ -131,8 +130,8 @@ fn set_network_rigidbody_system(
             "rigidbody of entity: {e:?} translation: {} rotation: {} velocity: {} angular velocity: {}", 
             transform.translation,
             transform.rotation,
-            lin_vel.0,
-            ang_vel.0
+            vel.linvel,
+            vel.angvel
         );
     }
 }

@@ -10,7 +10,7 @@ use bevy_replicon::prelude::AppRuleExt;
 use serde::{Deserialize, Serialize};
 use bevy::prelude::*;
 use bevy_replicon::prelude::*;
-use bevy_xpbd_3d::prelude::*;
+use bevy_rapier3d::prelude::*;
 use config::*;
 use network_rigidbody::*;
 
@@ -26,8 +26,8 @@ pub const INITIAL_ANGULAR_VELOCITY: Vec3 = Vec3::new(5.0, 5.0, 0.0);
 
 pub const DROPPED_Y: f32 = -15.0;
 
-pub const BEFORE_PHYSICS_SET: PhysicsSet = PhysicsSet::Prepare;
-pub const AFTER_PHYSICS_SET: PhysicsSet = PhysicsSet::Sync;
+pub const BEFORE_PHYSICS_SET: PhysicsSet = PhysicsSet::SyncBackend;
+pub const AFTER_PHYSICS_SET: PhysicsSet = PhysicsSet::Writeback;
 
 pub const FIRE_KEY: KeyCode = KeyCode::Space;
 
@@ -75,11 +75,18 @@ pub struct GameCommonPlugin;
 
 impl Plugin for GameCommonPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(
-            Time::new_with(Physics::fixed_hz(PHYSICS_FIXED_TICK_RATE64))
-        )
-        .add_plugins((
-            PhysicsPlugins::new(FixedUpdate),
+        app.init_resource::<RapierConfiguration>();
+
+        let mut physics_config = app.world.resource_mut
+        ::<RapierConfiguration>();
+        physics_config.timestep_mode = TimestepMode::Fixed {
+            dt: PHYSICS_FIXED_TICK_DELTA, 
+            substeps: 1 
+        };
+
+        app.add_plugins((
+            RapierPhysicsPlugin::<()>::default()
+            .in_fixed_schedule(),
             NetworkRigidBodyPlugin
         ))
         .replicate::<NetworkId>()
@@ -90,8 +97,8 @@ impl Plugin for GameCommonPlugin {
 
 pub(crate) fn generate_kinematic_ball() -> impl Bundle {
     (
-        RigidBody::Kinematic,
-        Collider::sphere(BALL_RADIUS)
+        RigidBody::KinematicPositionBased,
+        Collider::ball(BALL_RADIUS)
     )
 }
 
@@ -99,10 +106,12 @@ pub(crate) fn generate_dynamic_ball(velocity: Vec3, angular_velocity: Vec3)
 -> impl Bundle {
     (
         RigidBody::Dynamic,
-        LinearVelocity(velocity),
-        AngularVelocity(angular_velocity),
-        Collider::sphere(BALL_RADIUS),
-        Restitution::new(BALL_RESTITUTION),
+        Velocity{
+            linvel: velocity,
+            angvel: angular_velocity
+        },
+        Collider::ball(BALL_RADIUS),
+        Restitution::coefficient(BALL_RESTITUTION),
     )
 }
 

@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use bevy_replicon::client::ClientSet;
+use client_builder::Client;
 use super::{
     *,
     network_rigidbody::*,
@@ -20,10 +21,10 @@ impl Plugin for GameClientPlugin {
             setup_fixed_camera,
             client_setup_floor
         ))
-        .add_systems(PreUpdate, 
-            handle_fire
-            .after(ClientSet::Receive)
-        )
+        .add_systems(PreUpdate, (
+            handle_fire,
+            handle_force
+        ).after(ClientSet::Receive))
         .add_systems(FixedUpdate, (
             apply_net_rb_velocity_system,
             update_net_rb_cache_system,
@@ -40,10 +41,35 @@ impl Plugin for GameClientPlugin {
 
 fn handle_input(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut fire: EventWriter<NetworkFire>
+    mut fire: EventWriter<NetworkFire>,
+    mut force: EventWriter<NetworkForce>
 ) {
     if keyboard.just_pressed(FIRE_KEY) {
         fire.send(NetworkFire);
+    }
+
+    if keyboard.just_pressed(FORCE_KEY) {
+        force.send(NetworkForce);
+    }
+}
+
+fn handle_force(
+    mut commands: Commands,
+    query: Query<(Entity, &NetworkFireBall)>,
+    mut force: EventReader<NetworkForce>,
+    client: Res<Client>
+) {
+    for _ in force.read() {
+        for (e, ball) in query.iter() {
+            if ball.caster()
+            .get() == client.id() {
+                commands.entity(e)
+                .insert(ExternalImpulse{
+                    impulse: EXTRA_FORCE,
+                    torque_impulse: EXTRA_TORQUE
+                });
+            }
+        }
     }
 }
 

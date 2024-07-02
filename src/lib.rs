@@ -21,15 +21,19 @@ pub const BALL_RADIUS: f32 = 1.0;
 pub const BALL_RESTITUTION: f32 = 0.8;
 pub const BALL_COLOR: Color = Color::RED;
 
-pub const INITIAL_VELOCITY: Vec3 = Vec3::new(0.0, 30.0, 0.0);
+pub const INITIAL_VELOCITY: Vec3 = Vec3::new(0.0, 10.0, 0.0);
 pub const INITIAL_ANGULAR_VELOCITY: Vec3 = Vec3::new(5.0, 5.0, 0.0);
+pub const EXTRA_FORCE: Vec3 = Vec3::new(0.0, 100.0, 0.0);
+pub const EXTRA_TORQUE: Vec3 = Vec3::new(0.0, 0.0, 5.0);
 
 pub const DROPPED_Y: f32 = -15.0;
 
+pub const SUBSTEP: usize = 6;
 pub const BEFORE_PHYSICS_SET: PhysicsSet = PhysicsSet::SyncBackend;
 pub const AFTER_PHYSICS_SET: PhysicsSet = PhysicsSet::Writeback;
 
 pub const FIRE_KEY: KeyCode = KeyCode::Space;
+pub const FORCE_KEY: KeyCode = KeyCode::KeyF;
 
 #[derive(Component, Serialize, Deserialize)]
 pub struct NetworkId(ClientId);
@@ -64,6 +68,9 @@ impl NetworkFireBall {
 #[derive(Event, Serialize, Deserialize)]
 pub struct NetworkFire;
 
+#[derive(Event, Serialize, Deserialize)]
+pub struct NetworkForce;
+
 #[derive(Component)]
 pub struct Cache<C: Component> {
     pub latest: C,
@@ -81,7 +88,7 @@ impl Plugin for GameCommonPlugin {
         ::<RapierConfiguration>();
         physics_config.timestep_mode = TimestepMode::Fixed {
             dt: PHYSICS_FIXED_TICK_DELTA, 
-            substeps: 1 
+            substeps: SUBSTEP
         };
 
         app.add_plugins((
@@ -91,7 +98,8 @@ impl Plugin for GameCommonPlugin {
         ))
         .replicate::<NetworkId>()
         .replicate::<NetworkFireBall>()
-        .add_client_event::<NetworkFire>(ChannelKind::Ordered);
+        .add_client_event::<NetworkFire>(ChannelKind::Ordered)
+        .add_client_event::<NetworkForce>(ChannelKind::Ordered);
     }
 }
 

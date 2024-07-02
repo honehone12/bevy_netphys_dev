@@ -12,11 +12,12 @@ impl Plugin for GameServerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(GameCommonPlugin)
         .add_systems(Startup, server_setup_floor)
-        .add_systems(PreUpdate, 
-            handle_server_event
-            .after(ServerSet::Receive)
-        )
-        .add_systems(Update, handle_fire)
+        .add_systems(PreUpdate, ( 
+            handle_server_event,
+            handle_fire,
+            handle_force
+        ).chain(
+        ).after(ServerSet::Receive))
         .add_systems(PostUpdate, 
             despawn_dropped
             .before(ServerSet::Send)
@@ -79,6 +80,24 @@ fn handle_fire(
             },
             generate_dynamic_ball(INITIAL_VELOCITY, INITIAL_ANGULAR_VELOCITY)
         ));
+    }
+}
+
+fn handle_force(
+    mut commands: Commands,
+    query: Query<(Entity, &NetworkFireBall)>,
+    mut force: EventReader<FromClient<NetworkForce>>
+) {
+    for FromClient { client_id, event: _ } in force.read() {
+        for (e, ball) in query.iter() {
+            if ball.caster() == *client_id {
+                commands.entity(e)
+                .insert(ExternalImpulse{
+                    impulse: EXTRA_FORCE,
+                    torque_impulse: EXTRA_TORQUE
+                });
+            }
+        }
     }
 }
 
